@@ -181,7 +181,7 @@ __managed__ real4th x_managed;
 
 TEST_CASE("testing autodiff::real", "[forward][real]")
 {
-    real4th x, y, z, u, v, w;
+    real4th x, y, z, u;
 
     unary(x, x, [] __host__ __device__(real4th x) -> real4th { x = 1.0; return x; });
 

@@ -1,12 +1,12 @@
-def declare_variables(variables, macro):
+def define_env(env):
     """
-    This is the hook for the functions
+    This is the hook for defining variables, macros and filters
 
-    - variables: the dictionary that contains the variables
-    - macro: a decorator function, to declare a macro.
+    - env: the mkdocs-macros environment, whose `variables` dict holds page
+      variables and whose `macro` decorator registers a Jinja2 callable.
     """
 
-    @macro
+    @env.macro
     def inputcode(filename, language, startline=0, endline=None):
         filename = '../' + filename  # file path must be given relative to root directory
         f = open(filename, 'r')
@@ -19,6 +19,6 @@ def declare_variables(variables, macro):
         textblock = f'```{language}\n{text}\n```'
         return textblock
 
-    @macro
+    @env.macro
     def inputcpp(filename, startline=0, endline=None):
         return inputcode(filename, 'cpp', startline, endline)

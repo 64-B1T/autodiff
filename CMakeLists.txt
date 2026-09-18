@@ -28,6 +28,7 @@ option(AUTODIFF_TEST_SANITIZE "Build the test target with AddressSanitizer/Undef
 option(AUTODIFF_STRICT_WARNINGS "Build the test target with -Wall -Wextra -Wpedantic (or /W4)." OFF)
 option(AUTODIFF_STRICT_WARNINGS_AS_ERRORS "Also treat those warnings as errors (-Werror / /WX). Requires AUTODIFF_STRICT_WARNINGS." OFF)
 option(AUTODIFF_TEST_COVERAGE "Build the test target with gcov/lcov coverage instrumentation." OFF)
+option(AUTODIFF_ENABLE_CUDA "Build CUDA support if a CUDA compiler is found. Turn off on CI runners: they may have nvcc (e.g. via conda's cuda-toolkit) without an actual GPU, which makes CUDA compile but fail at runtime." ON)
 
 # Find eigen library
 find_package(Eigen3 QUIET)
@@ -45,15 +46,19 @@ set(CMAKE_CXX_STANDARD 17)          # ensure cmake instructs compiler to use C++
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # ensure the C++ standard given before is actually used
 set(CMAKE_CXX_EXTENSIONS OFF)       # avoid compile flags of the type -std=gnu++1z added by cmake
 
-include(CheckLanguage)
-check_language(CUDA)
-if(CMAKE_CUDA_COMPILER)
-    enable_language(CUDA)
-    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-        set(CMAKE_CUDA_ARCHITECTURES OFF)
+if(AUTODIFF_ENABLE_CUDA)
+    include(CheckLanguage)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        enable_language(CUDA)
+        if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+            set(CMAKE_CUDA_ARCHITECTURES OFF)
+        endif()
+    else()
+        message(STATUS "No CUDA compiler found")
     endif()
 else()
-    message(STATUS "No CUDA compiler found")
+    message(STATUS "CUDA support disabled (AUTODIFF_ENABLE_CUDA=OFF)")
 endif()
 
 # Build the library (actually, just provide details about the library target, specify required compile options, etc. because autodiff is header-only)

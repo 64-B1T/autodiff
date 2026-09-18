@@ -50,7 +50,7 @@ jobs:
         shell: powershell
         run: |
           conda activate autodiff
-          cmake -S . -B .build
+          cmake -S . -B .build -DAUTODIFF_ENABLE_CUDA=OFF
       - name: Build
         shell: powershell
         run: |
