@@ -497,7 +497,26 @@ AUTODIFF_DEVICE_FUNC constexpr auto pow(const Real<N, T>& x, const U& c)
     if constexpr (N > 0)
     {
         // assert(x[0] != 0 && "autodiff::pow(x, y) has undefined derivatives when x = 0");
-        if(x[0] == 0) return res;
+        if(x[0] == 0)
+        {
+            // The log-based recurrence below is singular at x = 0 (it computes
+            // through log(x)). But when c is a non-negative integer, x^c is smooth
+            // at x = 0 and equals x multiplied by itself c times, so compute it that
+            // way instead of silently returning zero for every derivative coefficient
+            // above the 0th (see autodiff/autodiff#351). For other exponents the
+            // derivatives are genuinely undefined/infinite at x = 0, so we still fall
+            // back to returning just the value with zero derivatives in that case.
+            const auto n = static_cast<long long>(c);
+            if(static_cast<U>(n) == c && n >= 0)
+            {
+                if(n == 0) { res[0] = T(1); return res; }
+                Real<N, T> result = x;
+                for(long long i = 1; i < n; ++i)
+                    result = result * x;
+                return result;
+            }
+            return res;
+        }
         Real<N, T> a = c * log(x);
         For<1, N + 1>([&](auto i) constexpr {
             res[i] = Sum<0, i>([&](auto j) constexpr {
@@ -792,8 +811,10 @@ AUTODIFF_DEVICE_FUNC constexpr auto asinh(const Real<N, T>& x)
     res[0] = asinh(x[0]);
     if constexpr (N > 0)
     {
+        Real<N - 1, T> xprime;
+        For<1, N + 1>([&](auto i) constexpr { xprime[i - 1] = x[i]; });
         Real<N - 1, T> aux(x);
-        aux = 1/sqrt(aux*aux + 1);
+        aux = xprime/sqrt(aux*aux + 1);
         For<1, N + 1>([&](auto i) constexpr {
             res[i] = aux[i - 1];
         });
@@ -809,8 +830,10 @@ AUTODIFF_DEVICE_FUNC constexpr auto acosh(const Real<N, T>& x)
     if constexpr (N > 0)
     {
         assert(x[0] > 1.0 && "autodiff::acosh(x) has undefined derivative when |x| <= 1");
+        Real<N - 1, T> xprime;
+        For<1, N + 1>([&](auto i) constexpr { xprime[i - 1] = x[i]; });
         Real<N - 1, T> aux(x);
-        aux = 1/sqrt(aux*aux - 1);
+        aux = xprime/sqrt(aux*aux - 1);
         For<1, N + 1>([&](auto i) constexpr {
             res[i] = aux[i - 1];
         });
@@ -825,9 +848,11 @@ AUTODIFF_DEVICE_FUNC constexpr auto atanh(const Real<N, T>& x)
     res[0] = atanh(x[0]);
     if constexpr (N > 0)
     {
-        assert(x[0] < 1.0 && "autodiff::atanh(x) has undefined derivative when |x| >= 1");
+        assert(std::abs(x[0]) < 1.0 && "autodiff::atanh(x) has undefined derivative when |x| >= 1");
+        Real<N - 1, T> xprime;
+        For<1, N + 1>([&](auto i) constexpr { xprime[i - 1] = x[i]; });
         Real<N - 1, T> aux(x);
-        aux = 1/(1 - aux*aux);
+        aux = xprime/(1 - aux*aux);
         For<1, N + 1>([&](auto i) constexpr {
             res[i] = aux[i - 1];
         });

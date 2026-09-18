@@ -242,6 +242,53 @@ TEST_CASE("testing autodiff::real", "[forward][real]")
 
     CHECK_4TH_ORDER_REAL_NUMBERS(y, z);
 
+    // Regression test for pow(x, c) with a non-negative integer c silently
+    // returning zero for every derivative above the 0th when x = 0, instead of
+    // the correct value (autodiff/autodiff#351). The general pow(Real, U)
+    // formula goes through log(x), which is singular at x = 0, so integer
+    // powers need to be computed by repeated multiplication there instead.
+    {
+        const double c = 4.3;
+        auto fsquare  = [c](const auto& rho) { return c*rho*rho; };
+        auto fpow2    = [c](const auto& rho) { return c*pow(rho, 2.0); };
+        auto fpow3    = [c](const auto& rho) { return c*pow(rho, 3.0); };
+        auto fpow0    = [c](const auto& rho) { return c*pow(rho, 0.0); };
+        auto fpowfrac = [](const auto& rho) { return pow(rho, 1.5); };
+
+        real2nd x2 = 0.0;
+        auto dsquare = derivatives(fsquare, along(1), at(x2));
+        auto dpow2   = derivatives(fpow2, along(1), at(x2));
+        CHECK_APPROX( dpow2[2], dsquare[2] ); // both should equal c*2
+        CHECK_APPROX( dpow2[2], c*2 );
+
+        real4th x3 = 0.0;
+        auto dpow3 = derivatives(fpow3, along(1), at(x3));
+        CHECK_APPROX( dpow3[0], 0.0 );
+        CHECK_APPROX( dpow3[1], 0.0 );
+        CHECK_APPROX( dpow3[2], 0.0 );
+        CHECK_APPROX( dpow3[3], c*6.0 );
+
+        real2nd x0 = 0.0;
+        auto dpow0 = derivatives(fpow0, along(1), at(x0));
+        CHECK_APPROX( dpow0[0], c );   // 0^0 == 1 by convention
+        CHECK_APPROX( dpow0[1], 0.0 );
+        CHECK_APPROX( dpow0[2], 0.0 );
+
+        // Non-integer exponent at x = 0: derivatives are genuinely undefined, but
+        // the value itself must still be correct and evaluation must not misbehave.
+        real2nd xfrac = 0.0;
+        auto dfrac = derivatives(fpowfrac, along(1), at(xfrac));
+        CHECK_APPROX( dfrac[0], 0.0 );
+
+        // Away from x = 0, pow(x, 2) must still agree exactly with x*x (no regression).
+        real2nd xaway = 3.0;
+        auto dsquareAway = derivatives(fsquare, along(1), at(xaway));
+        auto dpow2Away   = derivatives(fpow2, along(1), at(xaway));
+        CHECK_APPROX( dpow2Away[0], dsquareAway[0] );
+        CHECK_APPROX( dpow2Away[1], dsquareAway[1] );
+        CHECK_APPROX( dpow2Away[2], dsquareAway[2] );
+    }
+
     //=====================================================================================================================
     //
     // TESTING TRIGONOMETRIC FUNCTIONS
@@ -363,28 +410,45 @@ TEST_CASE("testing autodiff::real", "[forward][real]")
     z = 1/sqrt(x*x + 1);
 
     CHECK_APPROX( y[0], asinh(x[0]) );
-    CHECK_APPROX( y[1], z[0] );
-    CHECK_APPROX( y[2], z[1] );
-    CHECK_APPROX( y[3], z[2] );
-    CHECK_APPROX( y[4], z[3] );
+    CHECK_APPROX( y[1], x[1]*z[0] );
+    CHECK_APPROX( y[2], x[2]*z[0] + x[1]*z[1] );
+    CHECK_APPROX( y[3], x[3]*z[0] + 2*x[2]*z[1] + x[1]*z[2] );
+    CHECK_APPROX( y[4], x[4]*z[0] + 3*x[3]*z[1] + 3*x[2]*z[2] + x[1]*z[3] );
 
     y = acosh(10*x); // acosh requires x > 1
     z = 1/sqrt(100*x*x - 1);
 
     CHECK_APPROX( y[0], acosh(10*x[0]) );
-    CHECK_APPROX( y[1], z[0] );
-    CHECK_APPROX( y[2], z[1] );
-    CHECK_APPROX( y[3], z[2] );
-    CHECK_APPROX( y[4], z[3] );
+    CHECK_APPROX( y[1], 10*(x[1]*z[0]) );
+    CHECK_APPROX( y[2], 10*(x[2]*z[0] + x[1]*z[1]) );
+    CHECK_APPROX( y[3], 10*(x[3]*z[0] + 2*x[2]*z[1] + x[1]*z[2]) );
+    CHECK_APPROX( y[4], 10*(x[4]*z[0] + 3*x[3]*z[1] + 3*x[2]*z[2] + x[1]*z[3]) );
 
     y = atanh(x);
     z = 1/(1 - x*x);
 
     CHECK_APPROX( y[0], atanh(x[0]) );
-    CHECK_APPROX( y[1], z[0] );
-    CHECK_APPROX( y[2], z[1] );
-    CHECK_APPROX( y[3], z[2] );
-    CHECK_APPROX( y[4], z[3] );
+    CHECK_APPROX( y[1], x[1]*z[0] );
+    CHECK_APPROX( y[2], x[2]*z[0] + x[1]*z[1] );
+    CHECK_APPROX( y[3], x[3]*z[0] + 2*x[2]*z[1] + x[1]*z[2] );
+    CHECK_APPROX( y[4], x[4]*z[0] + 3*x[3]*z[1] + 3*x[2]*z[2] + x[1]*z[3] );
+
+    // Regression test for the missing chain-rule factor that made asinh/acosh/atanh
+    // silently return wrong derivatives whenever their argument was itself a
+    // non-trivial function of the seeded variable (autodiff/autodiff#395, #396).
+    // The bug was invisible when composed with the identity (chain factor 1), so
+    // these use a genuine composed argument (2*x) instead.
+    {
+        real1st t = 0.3;
+        auto d_asinh = derivative([](real1st v) { return asinh(2.0*v); }, wrt(t), at(t));
+        auto d_atanh = derivative([](real1st v) { return atanh(2.0*v); }, wrt(t), at(t));
+        CHECK_APPROX( d_asinh, 2.0/sqrt(1.0 + (2.0*0.3)*(2.0*0.3)) );
+        CHECK_APPROX( d_atanh, 2.0/(1.0 - (2.0*0.3)*(2.0*0.3)) );
+
+        real1st s = 2.0;
+        auto d_acosh = derivative([](real1st v) { return acosh(2.0*v); }, wrt(s), at(s));
+        CHECK_APPROX( d_acosh, 2.0/sqrt((2.0*2.0)*(2.0*2.0) - 1.0) );
+    }
 
     //=====================================================================================================================
     //

@@ -1,4 +1,4 @@
-<a href="https://autodiff.github.io" target="_blank">
+<a href="https://64-b1t.github.io/autodiff/" target="_blank">
     <img src='art/autodiff-header.svg' width='100%'>
 </a>
 
@@ -142,7 +142,7 @@ computed with a call to function `autodiff::derivatives`.
 
 Check the documentation website for more details:
 
-<a href="https://autodiff.github.io" target="_blank">
+<a href="https://64-b1t.github.io/autodiff/" target="_blank">
     <img src='art/autodiff.github.io.svg' width='100%'>
 </a>
 
