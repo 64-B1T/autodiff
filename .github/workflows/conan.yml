@@ -1,0 +1,41 @@
+name: conan
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+  schedule:
+    - cron: "0 5 * * 1"  # runs at 05:00 UTC on Mondays
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conan-create:
+    name: conan create (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Conan
+        run: pip install "conan>=2.0"
+
+      - name: Configure default Conan profile
+        run: conan profile detect --force
+
+      - name: conan create
+        run: conan create . --build=missing -tf test_package

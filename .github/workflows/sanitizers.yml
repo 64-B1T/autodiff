@@ -1,0 +1,43 @@
+name: sanitizers
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+  schedule:
+    - cron: "0 5 * * 1"  # runs at 05:00 UTC on Mondays
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  asan-ubsan:
+    name: ASan/UBSan + strict warnings (Linux, GCC)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeigen3-dev catch2 ninja-build
+
+      - name: Configure
+        run: |
+          cmake -GNinja -S . -B .build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DAUTODIFF_BUILD_PYTHON=OFF \
+            -DAUTODIFF_BUILD_DOCS=OFF \
+            -DAUTODIFF_TEST_SANITIZE=ON \
+            -DAUTODIFF_STRICT_WARNINGS=ON
+
+      - name: Build
+        run: cmake --build .build
+
+      - name: Test
+        run: cmake --build .build --target tests

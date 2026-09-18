@@ -24,6 +24,9 @@ option(AUTODIFF_BUILD_TESTS "Enable the compilation of the test files." ON)
 option(AUTODIFF_BUILD_PYTHON "Enable the compilation of the python bindings." ON)
 option(AUTODIFF_BUILD_EXAMPLES "Enable the compilation of the example files." ON)
 option(AUTODIFF_BUILD_DOCS "Enable the build of the documentation and website." ON)
+option(AUTODIFF_TEST_SANITIZE "Build the test target with AddressSanitizer/UndefinedBehaviorSanitizer enabled." OFF)
+option(AUTODIFF_STRICT_WARNINGS "Build the test target with -Wall -Wextra -Werror (or /W4 /WX)." OFF)
+option(AUTODIFF_TEST_COVERAGE "Build the test target with gcov/lcov coverage instrumentation." OFF)
 
 # Find eigen library
 find_package(Eigen3 QUIET)

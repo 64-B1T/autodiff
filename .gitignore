@@ -68,3 +68,11 @@ CMakeLists.txt.user
 
 # macOS
 .DS_Store
+
+# Conan
+CMakeUserPresets.json
+
+# Coverage
+*.gcda
+*.gcno
+coverage.info

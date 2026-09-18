@@ -2,9 +2,10 @@
     <img src='art/autodiff-header.svg' width='100%'>
 </a>
 
-![Linux build status](https://github.com/autodiff/autodiff/workflows/linux/badge.svg?branch=master)
-![macOS build status](https://github.com/autodiff/autodiff/workflows/osx/badge.svg?branch=master)
-![Windows build status](https://github.com/autodiff/autodiff/workflows/windows/badge.svg?branch=master)
+![Linux build status](https://github.com/64-B1T/autodiff/workflows/linux/badge.svg?branch=main)
+![macOS build status](https://github.com/64-B1T/autodiff/workflows/osx/badge.svg?branch=main)
+![Windows build status](https://github.com/64-B1T/autodiff/workflows/windows/badge.svg?branch=main)
+[![codecov](https://codecov.io/gh/64-B1T/autodiff/branch/main/graph/badge.svg)](https://codecov.io/gh/64-B1T/autodiff)
 
 # Overview
 
@@ -169,4 +170,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-[issues]: https://github.com/autodiff/autodiff/issues/new
+[issues]: https://github.com/64-B1T/autodiff/issues/new
