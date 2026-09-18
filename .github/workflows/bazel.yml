@@ -1,16 +1,14 @@
 name: bazel
 
-disabled: true
-
+# Kept manually-triggerable but not run automatically: this job uses the same
+# conda-devenv setup that was failing on linux/osx/website (conda reporting
+# "invalid choice: 'devenv'" -- fixed below by installing conda-devenv into
+# base explicitly). Re-enable the push/pull_request/schedule triggers once a
+# manual run here confirms it works. Note there's no `disabled:` key in the
+# GitHub Actions workflow schema -- setting one (as this file used to) makes
+# the whole workflow file invalid, which is why this job never actually ran.
 on:
-  push:
-    branches:
-      - main
-
-  pull_request:
-
-  schedule:
-    - cron: "0 5 * * 1"  # runs at 05:00 UTC on Mondays
+  workflow_dispatch:
 
 jobs:
   bazel:
@@ -39,7 +37,8 @@ jobs:
       shell: bash -l {0}
       run: |
         conda config --set always_yes yes --set changeps1 no
-        conda install conda-devenv bazel
+        conda install -n base conda-devenv  # must land in base: conda plugin discovery only sees base's env
+        conda install bazel
         conda devenv
         source activate autodiff
 

@@ -59,11 +59,21 @@ endif()
 
 # Enable stricter warnings on the test target to catch real issues early (opt-in, since
 # the interface library itself must stay warning-flag-agnostic for downstream consumers).
+# Not using -Werror/-WX yet: the codebase currently has pre-existing warnings
+# (unnecessary-parentheses, unused-parameter, sign-compare) that need a dedicated
+# cleanup pass first. Flip AUTODIFF_STRICT_WARNINGS_AS_ERRORS on once that's done.
 if(AUTODIFF_STRICT_WARNINGS)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(autodiff-cpptests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+        target_compile_options(autodiff-cpptests PRIVATE -Wall -Wextra -Wpedantic)
     elseif(MSVC)
-        target_compile_options(autodiff-cpptests PRIVATE /W4 /WX)
+        target_compile_options(autodiff-cpptests PRIVATE /W4)
+    endif()
+    if(AUTODIFF_STRICT_WARNINGS_AS_ERRORS)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(autodiff-cpptests PRIVATE -Werror)
+        elseif(MSVC)
+            target_compile_options(autodiff-cpptests PRIVATE /WX)
+        endif()
     endif()
 endif()
 
