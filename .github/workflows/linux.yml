@@ -63,8 +63,8 @@ jobs:
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
         run: |
-          mamba install -n base conda-devenv  # must land in base: conda plugin discovery only sees base's env
-          conda devenv -e mamba
+          mamba install conda-devenv
+          conda-devenv -e mamba
 
       - name: Building, Testing & Installing
         shell: bash -el {0}

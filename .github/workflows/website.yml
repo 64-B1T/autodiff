@@ -23,13 +23,13 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-
+          miniforge-version: latest
 
       - name: Configuring Conda Environment
         shell: bash -el {0}
         run: |
-          mamba install -n base conda-devenv  # must land in base: conda plugin discovery only sees base's env
-          conda devenv -e mamba
+          mamba install conda-devenv
+          conda-devenv -e mamba
 
       - name: Build Website
         shell: bash -l {0}

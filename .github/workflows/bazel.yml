@@ -1,12 +1,17 @@
 name: bazel
 
 # Kept manually-triggerable but not run automatically: this job uses the same
-# conda-devenv setup that was failing on linux/osx/website (conda reporting
-# "invalid choice: 'devenv'" -- fixed below by installing conda-devenv into
-# base explicitly). Re-enable the push/pull_request/schedule triggers once a
-# manual run here confirms it works. Note there's no `disabled:` key in the
-# GitHub Actions workflow schema -- setting one (as this file used to) makes
-# the whole workflow file invalid, which is why this job never actually ran.
+# conda-devenv setup that was failing on linux/osx/website ("conda devenv"
+# -> "invalid choice: 'devenv'"). conda-devenv only ever ships a console_scripts
+# entry point (conda-devenv/mamba-devenv), never a formal `conda.plugins` hook
+# (verified against its setup.py), so it relied on conda's old "look for a
+# conda-<subcommand> executable on PATH" fallback dispatch. Current conda has
+# dropped that in favor of pluggy-only plugin discovery, so `conda devenv` is
+# gone for good -- call the `conda-devenv` executable directly instead (fixed
+# below). Re-enable the push/pull_request/schedule triggers once a manual run
+# here confirms it works. Note there's no `disabled:` key in the GitHub Actions
+# workflow schema -- setting one (as this file used to) makes the whole
+# workflow file invalid, which is why this job never actually ran.
 on:
   workflow_dispatch:
 
@@ -37,9 +42,8 @@ jobs:
       shell: bash -l {0}
       run: |
         conda config --set always_yes yes --set changeps1 no
-        conda install -n base conda-devenv  # must land in base: conda plugin discovery only sees base's env
-        conda install bazel
-        conda devenv
+        conda install conda-devenv bazel
+        conda-devenv
         source activate autodiff
 
     - name: Build
